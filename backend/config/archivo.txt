@@ -1,1 +1,0 @@
-COnfiguracion de la base de datos en esta carpeta
