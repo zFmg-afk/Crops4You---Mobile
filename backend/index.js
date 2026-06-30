@@ -9,6 +9,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Rutas de prueba (Objetivo 1)
+app.use('/health', require('./routes/health.routes'));
+app.use('/status', require('./routes/health.routes'));
+
+app.use(require('./middlewares/errorHandler'));
+
 (async () => {
   const { error } = await supabase.from('parcelas').select('count', { count: 'exact', head: true });
   if (error) {
