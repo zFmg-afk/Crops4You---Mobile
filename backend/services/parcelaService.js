@@ -1,21 +1,19 @@
-const supabase = require('../config/db');
+const { supabase: defaultSupabase } = require('../config/db');
 
-const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
-
-exports.getAll = async (userId, token) => {
-  const { data, error } = await supabase
+exports.getAll = async (userId, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
-    .select('*', { headers: authHeaders(token) })
+    .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw { status: 500, message: error.message };
   return data;
 };
 
-exports.getById = async (id, userId, token) => {
-  const { data, error } = await supabase
+exports.getById = async (id, userId, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
-    .select('*', { headers: authHeaders(token) })
+    .select('*')
     .eq('id', id)
     .eq('user_id', userId)
     .maybeSingle();
@@ -24,30 +22,27 @@ exports.getById = async (id, userId, token) => {
   return data;
 };
 
-exports.create = async (body, token) => {
+exports.create = async (body, sb = defaultSupabase) => {
   if (!body.nombre || !body.user_id) {
     throw { status: 400, message: 'Faltan campos requeridos: nombre, user_id' };
   }
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('parcelas')
-    .insert(
-      {
-        nombre: body.nombre,
-        descripcion: body.descripcion || null,
-        latitud: body.latitud || null,
-        longitud: body.longitud || null,
-        poligono: body.poligono || null,
-        user_id: body.user_id,
-      },
-      { headers: authHeaders(token) },
-    )
+    .insert({
+      nombre: body.nombre,
+      descripcion: body.descripcion || null,
+      latitud: body.latitud || null,
+      longitud: body.longitud || null,
+      poligono: body.poligono || null,
+      user_id: body.user_id,
+    })
     .select()
     .single();
   if (error) throw { status: 500, message: error.message };
   return data;
 };
 
-exports.update = async (id, body, token) => {
+exports.update = async (id, body, sb = defaultSupabase) => {
   const updateData = {};
   if (body.nombre !== undefined) updateData.nombre = body.nombre;
   if (body.descripcion !== undefined) updateData.descripcion = body.descripcion;
@@ -55,9 +50,9 @@ exports.update = async (id, body, token) => {
   if (body.longitud !== undefined) updateData.longitud = body.longitud;
   if (body.poligono !== undefined) updateData.poligono = body.poligono;
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('parcelas')
-    .update(updateData, { headers: authHeaders(token) })
+    .update(updateData)
     .eq('id', id)
     .select();
   if (error) throw { status: 500, message: error.message };
@@ -65,10 +60,10 @@ exports.update = async (id, body, token) => {
   return data[0];
 };
 
-exports.remove = async (id, token) => {
-  const { data, error } = await supabase
+exports.remove = async (id, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
-    .delete({ headers: authHeaders(token) })
+    .delete()
     .eq('id', id)
     .select();
   if (error) throw { status: 500, message: error.message };

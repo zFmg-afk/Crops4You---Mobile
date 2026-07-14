@@ -1,4 +1,4 @@
-const supabase = require('../config/db');
+const { supabase, createAuthenticatedClient } = require('../config/db');
 
 const auth = async (req, res, next) => {
   try {
@@ -22,7 +22,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = data.user;
-    req.token = token;
+    req.supabase = createAuthenticatedClient(token);
     next();
   } catch (err) {
     return res.status(500).json({
