@@ -32,7 +32,7 @@ exports.create = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
-    const cultivos = await cultivoService.getAll(req.user.id);
+    const cultivos = await cultivoService.getAll(req.user.id, req.query.parcela_id);
     res.status(200).json(cultivos);
   } catch (err) {
     next(err);
