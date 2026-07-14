@@ -1,7 +1,7 @@
-const supabase = require('../config/db');
+const { supabase: defaultSupabase } = require('../config/db');
 
-exports.getAll = async (userId) => {
-  const { data, error } = await supabase
+exports.getAll = async (userId, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
     .select('*')
     .eq('user_id', userId)
@@ -10,8 +10,8 @@ exports.getAll = async (userId) => {
   return data;
 };
 
-exports.getById = async (id, userId) => {
-  const { data, error } = await supabase
+exports.getById = async (id, userId, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
     .select('*')
     .eq('id', id)
@@ -22,11 +22,11 @@ exports.getById = async (id, userId) => {
   return data;
 };
 
-exports.create = async (body) => {
+exports.create = async (body, sb = defaultSupabase) => {
   if (!body.nombre || !body.user_id) {
     throw { status: 400, message: 'Faltan campos requeridos: nombre, user_id' };
   }
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('parcelas')
     .insert({
       nombre: body.nombre,
@@ -42,7 +42,7 @@ exports.create = async (body) => {
   return data;
 };
 
-exports.update = async (id, body) => {
+exports.update = async (id, body, sb = defaultSupabase) => {
   const updateData = {};
   if (body.nombre !== undefined) updateData.nombre = body.nombre;
   if (body.descripcion !== undefined) updateData.descripcion = body.descripcion;
@@ -50,7 +50,7 @@ exports.update = async (id, body) => {
   if (body.longitud !== undefined) updateData.longitud = body.longitud;
   if (body.poligono !== undefined) updateData.poligono = body.poligono;
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('parcelas')
     .update(updateData)
     .eq('id', id)
@@ -60,8 +60,8 @@ exports.update = async (id, body) => {
   return data[0];
 };
 
-exports.remove = async (id) => {
-  const { data, error } = await supabase
+exports.remove = async (id, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
     .delete()
     .eq('id', id)

@@ -1,7 +1,7 @@
-const supabase = require('../config/db');
+const { supabase: defaultSupabase } = require('../config/db');
 
-const getAll = async (userId, parcelaId) => {
-  let query = supabase
+const getAll = async (userId, parcelaId, sb = defaultSupabase) => {
+  let query = sb
     .from('cultivos')
     .select('*, parcelas(nombre)')
     .eq('user_id', userId);
@@ -16,8 +16,8 @@ const getAll = async (userId, parcelaId) => {
   return data;
 };
 
-const getById = async (id, userId) => {
-  const { data, error } = await supabase
+const getById = async (id, userId, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('cultivos')
     .select('*, parcelas(nombre)')
     .eq('id', id)
@@ -28,8 +28,8 @@ const getById = async (id, userId) => {
   return data;
 };
 
-const create = async (data, userId) => {
-  const { data: cultivo, error } = await supabase
+const create = async (data, userId, sb = defaultSupabase) => {
+  const { data: cultivo, error } = await sb
     .from('cultivos')
     .insert({ ...data, user_id: userId })
     .select()
@@ -39,8 +39,8 @@ const create = async (data, userId) => {
   return cultivo;
 };
 
-const update = async (id, data, userId) => {
-  const { data: cultivo, error } = await supabase
+const update = async (id, data, userId, sb = defaultSupabase) => {
+  const { data: cultivo, error } = await sb
     .from('cultivos')
     .update(data)
     .eq('id', id)
@@ -52,8 +52,8 @@ const update = async (id, data, userId) => {
   return cultivo;
 };
 
-const remove = async (id, userId) => {
-  const { error } = await supabase
+const remove = async (id, userId, sb = defaultSupabase) => {
+  const { error } = await sb
     .from('cultivos')
     .delete()
     .eq('id', id)
@@ -62,8 +62,8 @@ const remove = async (id, userId) => {
   if (error) throw error;
 };
 
-const parcelaExists = async (parcelaId, userId) => {
-  const { data, error } = await supabase
+const parcelaExists = async (parcelaId, userId, sb = defaultSupabase) => {
+  const { data, error } = await sb
     .from('parcelas')
     .select('id')
     .eq('id', parcelaId)
