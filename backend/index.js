@@ -14,6 +14,9 @@ app.use('/health', require('./routes/health.routes'));
 app.use('/status', require('./routes/health.routes'));
 app.use('/parcelas', require('./routes/parcelas.routes'));
 
+// Rutas de cultivos
+app.use('/cultivos', require('./routes/cultivos.routes'));
+
 app.use(require('./middlewares/errorHandler'));
 
 (async () => {
