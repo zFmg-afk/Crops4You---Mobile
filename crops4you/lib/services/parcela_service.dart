@@ -7,13 +7,19 @@ import 'package:http/http.dart' as http;
 class ParcelaService {
   final String _baseUrl = '${ApiConfig.backendBaseUrl}/parcelas';
 
-  String? get _userId => supabase.auth.currentUser?.id;
+  Map<String, String> _headers() {
+    final session = supabase.auth.currentSession;
+    final token = session?.accessToken ?? '';
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+  }
 
   Future<List<Parcela>> getAll() async {
-    final userId = _userId;
-    if (userId == null) throw Exception('Usuario no autenticado');
     final response = await http.get(
-      Uri.parse('$_baseUrl?user_id=$userId'),
+      Uri.parse(_baseUrl),
+      headers: _headers(),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as List;
@@ -23,13 +29,10 @@ class ParcelaService {
   }
 
   Future<void> create(Parcela parcela) async {
-    final userId = _userId;
-    if (userId == null) throw Exception('Usuario no autenticado');
     final body = parcela.toJson();
-    body['user_id'] = userId;
     final response = await http.post(
       Uri.parse(_baseUrl),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode(body),
     );
     if (response.statusCode != 201) {
@@ -40,7 +43,7 @@ class ParcelaService {
   Future<void> update(int id, Parcela parcela) async {
     final response = await http.put(
       Uri.parse('$_baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode(parcela.toJson()),
     );
     if (response.statusCode != 200) {
@@ -49,7 +52,10 @@ class ParcelaService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$_baseUrl/$id'));
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/$id'),
+      headers: _headers(),
+    );
     if (response.statusCode != 200) {
       throw Exception(_mensajeError(response));
     }
