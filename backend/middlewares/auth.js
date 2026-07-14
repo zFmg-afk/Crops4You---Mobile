@@ -1,4 +1,4 @@
-const { createAuthenticatedClient } = require('../config/db');
+const supabase = require('../config/db');
 
 const auth = async (req, res, next) => {
   try {
@@ -12,8 +12,7 @@ const auth = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    const tempClient = createAuthenticatedClient(token);
-    const { data, error } = await tempClient.auth.getUser(token);
+    const { data, error } = await supabase.auth.getUser(token);
 
     if (error || !data.user) {
       return res.status(401).json({
@@ -23,7 +22,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = data.user;
-    req.supabase = createAuthenticatedClient(token);
+    req.token = token;
     next();
   } catch (err) {
     return res.status(500).json({

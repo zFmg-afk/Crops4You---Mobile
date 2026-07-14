@@ -1,9 +1,11 @@
-const { supabase: defaultSupabase } = require('../config/db');
+const supabase = require('../config/db');
 
-const getAll = async (userId, parcelaId, sb = defaultSupabase) => {
-  let query = sb
+const authHeaders = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
+
+const getAll = async (userId, parcelaId, token) => {
+  let query = supabase
     .from('cultivos')
-    .select('*, parcelas(nombre)')
+    .select('*, parcelas(nombre)', { headers: authHeaders(token) })
     .eq('user_id', userId);
 
   if (parcelaId) {
@@ -16,10 +18,10 @@ const getAll = async (userId, parcelaId, sb = defaultSupabase) => {
   return data;
 };
 
-const getById = async (id, userId, sb = defaultSupabase) => {
-  const { data, error } = await sb
+const getById = async (id, userId, token) => {
+  const { data, error } = await supabase
     .from('cultivos')
-    .select('*, parcelas(nombre)')
+    .select('*, parcelas(nombre)', { headers: authHeaders(token) })
     .eq('id', id)
     .eq('user_id', userId)
     .single();
@@ -28,10 +30,10 @@ const getById = async (id, userId, sb = defaultSupabase) => {
   return data;
 };
 
-const create = async (data, userId, sb = defaultSupabase) => {
-  const { data: cultivo, error } = await sb
+const create = async (data, userId, token) => {
+  const { data: cultivo, error } = await supabase
     .from('cultivos')
-    .insert({ ...data, user_id: userId })
+    .insert({ ...data, user_id: userId }, { headers: authHeaders(token) })
     .select()
     .single();
 
@@ -39,10 +41,10 @@ const create = async (data, userId, sb = defaultSupabase) => {
   return cultivo;
 };
 
-const update = async (id, data, userId, sb = defaultSupabase) => {
-  const { data: cultivo, error } = await sb
+const update = async (id, data, userId, token) => {
+  const { data: cultivo, error } = await supabase
     .from('cultivos')
-    .update(data)
+    .update(data, { headers: authHeaders(token) })
     .eq('id', id)
     .eq('user_id', userId)
     .select()
@@ -52,20 +54,20 @@ const update = async (id, data, userId, sb = defaultSupabase) => {
   return cultivo;
 };
 
-const remove = async (id, userId, sb = defaultSupabase) => {
-  const { error } = await sb
+const remove = async (id, userId, token) => {
+  const { error } = await supabase
     .from('cultivos')
-    .delete()
+    .delete({ headers: authHeaders(token) })
     .eq('id', id)
     .eq('user_id', userId);
 
   if (error) throw error;
 };
 
-const parcelaExists = async (parcelaId, userId, sb = defaultSupabase) => {
-  const { data, error } = await sb
+const parcelaExists = async (parcelaId, userId, token) => {
+  const { data, error } = await supabase
     .from('parcelas')
-    .select('id')
+    .select('id', { headers: authHeaders(token) })
     .eq('id', parcelaId)
     .eq('user_id', userId)
     .maybeSingle();

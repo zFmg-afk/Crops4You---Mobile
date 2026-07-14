@@ -2,8 +2,7 @@ const parcelaService = require('../services/parcelaService');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const sb = req.supabase;
-    const parcelas = await parcelaService.getAll(req.user.id, sb);
+    const parcelas = await parcelaService.getAll(req.user.id, req.token);
     res.json(parcelas);
   } catch (err) {
     next(err);
@@ -12,8 +11,7 @@ exports.getAll = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
   try {
-    const sb = req.supabase;
-    const parcela = await parcelaService.getById(req.params.id, req.user.id, sb);
+    const parcela = await parcelaService.getById(req.params.id, req.user.id, req.token);
     res.json(parcela);
   } catch (err) {
     next(err);
@@ -22,12 +20,11 @@ exports.getById = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const sb = req.supabase;
     if (!req.body.nombre) {
       return res.status(400).json({ error: true, mensaje: 'El nombre es requerido' });
     }
     const body = { ...req.body, user_id: req.user.id };
-    const parcela = await parcelaService.create(body, sb);
+    const parcela = await parcelaService.create(body, req.token);
     res.status(201).json(parcela);
   } catch (err) {
     next(err);
@@ -36,8 +33,7 @@ exports.create = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const sb = req.supabase;
-    const parcela = await parcelaService.update(req.params.id, req.body, sb);
+    const parcela = await parcelaService.update(req.params.id, req.body, req.token);
     res.json(parcela);
   } catch (err) {
     next(err);
@@ -46,8 +42,7 @@ exports.update = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    const sb = req.supabase;
-    const result = await parcelaService.remove(req.params.id, sb);
+    const result = await parcelaService.remove(req.params.id, req.token);
     res.json(result);
   } catch (err) {
     next(err);
