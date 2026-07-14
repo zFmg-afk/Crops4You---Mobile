@@ -15,7 +15,8 @@ exports.create = async (req, res, next) => {
       });
     }
 
-    const exists = await cultivoService.parcelaExists(req.body.parcela_id, req.user.id);
+    const sb = req.supabase;
+    const exists = await cultivoService.parcelaExists(req.body.parcela_id, req.user.id, sb);
     if (!exists) {
       return res.status(404).json({
         error: true,
@@ -23,7 +24,7 @@ exports.create = async (req, res, next) => {
       });
     }
 
-    const cultivo = await cultivoService.create(req.body, req.user.id);
+    const cultivo = await cultivoService.create(req.body, req.user.id, sb);
     res.status(201).json(cultivo);
   } catch (err) {
     next(err);
@@ -32,7 +33,7 @@ exports.create = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
-    const cultivos = await cultivoService.getAll(req.user.id, req.query.parcela_id);
+    const cultivos = await cultivoService.getAll(req.user.id, req.query.parcela_id, req.supabase);
     res.status(200).json(cultivos);
   } catch (err) {
     next(err);
@@ -46,7 +47,8 @@ exports.update = async (req, res, next) => {
       return res.status(400).json({ error: true, mensaje: 'ID de cultivo inválido' });
     }
 
-    const existing = await cultivoService.getById(id, req.user.id);
+    const sb = req.supabase;
+    const existing = await cultivoService.getById(id, req.user.id, sb);
     if (!existing) {
       return res.status(404).json({
         error: true,
@@ -55,7 +57,7 @@ exports.update = async (req, res, next) => {
     }
 
     if (req.body.parcela_id !== undefined) {
-      const exists = await cultivoService.parcelaExists(req.body.parcela_id, req.user.id);
+      const exists = await cultivoService.parcelaExists(req.body.parcela_id, req.user.id, sb);
       if (!exists) {
         return res.status(404).json({
           error: true,
@@ -64,7 +66,7 @@ exports.update = async (req, res, next) => {
       }
     }
 
-    const cultivo = await cultivoService.update(id, req.body, req.user.id);
+    const cultivo = await cultivoService.update(id, req.body, req.user.id, sb);
     res.status(200).json(cultivo);
   } catch (err) {
     next(err);
@@ -78,7 +80,8 @@ exports.delete = async (req, res, next) => {
       return res.status(400).json({ error: true, mensaje: 'ID de cultivo inválido' });
     }
 
-    const existing = await cultivoService.getById(id, req.user.id);
+    const sb = req.supabase;
+    const existing = await cultivoService.getById(id, req.user.id, sb);
     if (!existing) {
       return res.status(404).json({
         error: true,
@@ -86,7 +89,7 @@ exports.delete = async (req, res, next) => {
       });
     }
 
-    await cultivoService.remove(id, req.user.id);
+    await cultivoService.remove(id, req.user.id, sb);
     res.status(204).send();
   } catch (err) {
     next(err);

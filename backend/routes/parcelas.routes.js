@@ -1,10 +1,11 @@
 const router = require('express').Router();
 const parcelaController = require('../controllers/parcelaController');
+const auth = require('../middlewares/auth');
 
-router.get('/', parcelaController.getAll);
-router.get('/:id', parcelaController.getById);
-router.post('/', parcelaController.create);
-router.put('/:id', parcelaController.update);
-router.delete('/:id', parcelaController.remove);
+router.get('/', auth, parcelaController.getAll);
+router.get('/:id', auth, parcelaController.getById);
+router.post('/', auth, parcelaController.create);
+router.put('/:id', auth, parcelaController.update);
+router.delete('/:id', auth, parcelaController.remove);
 
 module.exports = router;
