@@ -29,15 +29,10 @@ class ActividadService {
   }
 
   Future<void> create(Actividad actividad) async {
-    final user = supabase.auth.currentUser;
-    if (user == null) throw Exception('Usuario no autenticado');
-
-    final body = actividad.toJson();
-    body['user_id'] = user.id;
     final response = await http.post(
       Uri.parse(_baseUrl),
       headers: _headers(),
-      body: jsonEncode(body),
+      body: jsonEncode(actividad.toJson()),
     );
     if (response.statusCode != 201) {
       throw Exception(_mensajeError(response));
