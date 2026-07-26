@@ -1,4 +1,4 @@
-const supabase = require('../config/db');
+const { supabase } = require('../config/db');
 
 exports.getAll = async (userId, cultivoId) => {
   let query = supabase.from('actividades').select('*').eq('user_id', userId);
