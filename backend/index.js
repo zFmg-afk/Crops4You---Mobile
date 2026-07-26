@@ -13,6 +13,7 @@ app.use(express.json());
 app.use('/health', require('./routes/health.routes'));
 app.use('/status', require('./routes/health.routes'));
 app.use('/parcelas', require('./routes/parcelas.routes'));
+app.use('/actividades', require('./routes/actividades.routes'));
 
 // Rutas de cultivos
 app.use('/cultivos', require('./routes/cultivos.routes'));
@@ -22,7 +23,7 @@ app.use(require('./middlewares/errorHandler'));
 (async () => {
   const { error } = await supabase.from('parcelas').select('count', { count: 'exact', head: true });
   if (error) {
-    console.error('mal:', error.message);
+    console.error('ma:', error.message);
   } else {
     console.log('Servidor conectado a la bd de supabase caon');
   }
