@@ -2,7 +2,7 @@ const actividadService = require('../services/actividadService');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const actividades = await actividadService.getAll(req.query.user_id);
+    const actividades = await actividadService.getAll(req.query.user_id, req.query.cultivo_id);
     res.json(actividades);
   } catch (err) {
     next(err);
