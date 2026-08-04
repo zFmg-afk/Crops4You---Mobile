@@ -17,6 +17,9 @@ app.use('/parcelas', require('./routes/parcelas.routes'));
 // Rutas de cultivos
 app.use('/cultivos', require('./routes/cultivos.routes'));
 
+// Rutas de insumos
+app.use('/insumos', require('./routes/insumos.routes'));
+
 app.use(require('./middlewares/errorHandler'));
 
 (async () => {
