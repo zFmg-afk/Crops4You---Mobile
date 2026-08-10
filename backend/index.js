@@ -21,6 +21,9 @@ app.use('/cultivos', require('./routes/cultivos.routes'));
 // Rutas de insumos
 app.use('/insumos', require('./routes/insumos.routes'));
 
+// Rutas de recordatorios
+app.use('/recordatorios', require('./routes/recordatorios.routes'));
+
 app.use(require('./middlewares/errorHandler'));
 
 (async () => {
