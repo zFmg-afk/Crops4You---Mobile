@@ -23,6 +23,8 @@ app.use('/insumos', require('./routes/insumos.routes'));
 
 // Rutas de recordatorios
 app.use('/recordatorios', require('./routes/recordatorios.routes'));
+//Rutas de IA
+app.use('/ia', require('./routes/ia.routes'));
 
 app.use(require('./middlewares/errorHandler'));
 
