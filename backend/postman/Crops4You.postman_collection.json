@@ -331,6 +331,40 @@
       ]
     },
     {
+      "name": "Clima",
+      "item": [
+        {
+          "name": "GET Obtener clima",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/clima?lat=19.4326&lon=-99.1332",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "clima"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "19.4326"
+                },
+                {
+                  "key": "lon",
+                  "value": "-99.1332"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Login",
       "request": {
         "method": "POST",
