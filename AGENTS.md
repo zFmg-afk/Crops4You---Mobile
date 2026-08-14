@@ -1,74 +1,71 @@
 # AGENTS.md — Crops4You Mobile
 
-## Monorepo
+## Monorepo layout
 
 - `crops4you/` — Flutter app (Dart SDK ^3.10.7, Material 3)
-- `backend/` — Node.js / Express 5 API (entrypoint `index.js`)
+- `backend/` — Node.js / Express 5 API (Supabase via `@supabase/supabase-js`)
 
-No root `package.json` or workspace config. Run commands inside the subdirectory.
+## Backend API
 
-## Setup
+- Entrypoint is `backend/index.js` (port 3000, override with `PORT`). `backend/app.js` is **orphaned** — only mounts `/health` + error handler; `npm start`/`npm run dev` use `index.js`, so don't add routes to `app.js`.
+- Routes mounted in `index.js`: `/health` and `/status` (both no auth), `GET /clima?lat&lon` (no auth, proxies OpenWeather via `climaService.js`), `POST /ia/analisis` (auth, proxies Gemini via `ia.service.js`) plus `/parcelas`, `/actividades`, `/cultivos`, `/insumos`, `/recordatorios`. All data routes follow the `cultivo.service.js`/`actividadService.js` pattern; recordatorios mirror actividades (same layer, `*.service.js`/`*.controller.js`).
+- **Every data route requires `Authorization: Bearer <access_token>`** (Supabase JWT). No token → 401. Controllers/middlewares are inconsistent in naming: `parcelaController.js`/`actividadController.js`/`climaController.js` (camelCase) vs `cultivo.controller.js`/`insumo.controller.js`/`health.controller.js` (dotted). Grep both when locating files.
+- **RLS**: the backend uses the anon key, so Supabase row-level security blocks queries unless the user's JWT is presented. `middlewares/auth.js` verifies the JWT via `supabase.auth.getUser()` and attaches `req.supabase` — an authenticated per-request client built with `createAuthenticatedClient(token)` from `config/db.js`. Controllers pass `req.supabase` to services; never drop this threading or you'll hit `new row violates row-level security policy`.
+- Data flow: `controller -> service -> supabase`. `service/*.js` scopes every query by `user_id` and accepts `sb` (default `defaultSupabase`) as the last param.
+- All errors respond `{ error: true, mensaje: '...' }` (see `middlewares/errorHandler.js`); Flutter services parse `mensaje`.
+- Manual API testing: `backend/postman/Crops4You.postman_collection.json` (v2 at `backend/postman/Crops4You_v2.postman_collection`).
+- Root `.gitignore` ignores `.env` → `backend/.env` must be created locally (see Env files below).
 
-Both packages need a `.env` file (gitignored):
+## Flutter app key facts
 
-| Package | Required keys |
-|---|---|
-| `crops4you/.env` | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OPENWEATHER_KEY`, `GEMINI_KEY` |
-| `backend/.env` | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OPENWEATHER_KEY` |
+- **Entrypoint**: `crops4you/lib/main.dart` — loads `.env` via `flutter_dotenv`, initializes Supabase, home is `LoginScreen`. `Supabase.instance.client` is exported as `final supabase` from `main.dart`.
+- **Auth**: email/password via Supabase Auth (`auth_service.dart`).
+- **State mgmt**: `setState` only — no provider/riverpod/bloc.
+- **Navigation**: Material 3 `NavigationBar` (not `BottomNavigationBar`) with 6 tabs (`home_screen.dart`): Inicio, Parcelas, Clima, IA, Alertas, Perfil.
+- **Map**: parcel polygon delimitation uses `flutter_map` + `latlong2` + `geolocator`. `google_maps_flutter` is in `pubspec.yaml` but **unused**.
+- **Services calling the backend API** (`ApiConfig.backendBaseUrl` + `http`, JWT from `supabase.auth.currentSession?.accessToken`): `parcela_service.dart`, `cultivo_service.dart`, `actividad_service.dart`, `ai_service.dart` (via `POST /ia/analisis`).
+- **Services still calling Supabase directly** (`supabase.from(...)` — works because the app client carries the user's session): `insumo_service.dart`, `recordatorio_service.dart`. Note the backend has `/insumos` and `/actividades` routes, but the Flutter side only routes parcelas/cultivos/actividades through HTTP—insumos and recordatorios stay on direct Supabase. Recordatorios **do** have a backend route (`/recordatorios`) but the app doesn't consume it.
+- **External APIs**: OpenWeatherMap is called direct from `weather_service.dart` (key still exposed in the app) — but the backend `/clima` endpoint already exists and proxies it, so new weather work should go through the backend. Google Gemini is called exclusively through the backend `POST /ia/analisis`.
+- `ApiConfig.backendBaseUrl` (`lib/config/api_config.dart`) is a getter: web → `http://localhost:3000`, non-web → `http://10.0.2.2:3000`. Physical devices need the LAN IP; the app does not proxy through the backend by default.
 
-Missing `.env` → Flutter build fails at asset load (`.env` is declared in `pubspec.yaml` assets), backend exits on startup.
+## Env files
+
+- `crops4you/.env` is declared in `pubspec.yaml` assets; file must exist or `flutter run` fails. Keys: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OPENWEATHER_KEY`, `GEMINI_KEY`. (`API_URL` unused — services read `ApiConfig`.)
+- `backend/.env` needed by the server; not committed. Keys: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OPENWEATHER_KEY`, `GEMINI_KEY`. `config/db.js` exits on startup if the Supabase keys are missing.
 
 ## Commands
 
-| In | Command | Action |
-|---|---|---|
-| `crops4you/` | `flutter analyze` | Lint + static analysis |
-| `crops4you/` | `flutter test` | Tests |
-| `crops4you/` | `flutter run` | Launch app |
-| `backend/` | `npm run dev` | Dev server (nodemon) |
-| `backend/` | `npm start` | Production |
+Backend (from `backend/`):
 
-**Always** run `flutter analyze` before `flutter test` — lint catches silent test crashes.
+| Command | Action |
+|---|---|
+| `npm run dev` | Start server with nodemon |
+| `npm start` | Start server |
+| `node --check <file>.js` | Syntax-check (no test suite) |
 
-## Flutter architecture
+Flutter (from `crops4you/`):
 
-- **Auth**: email/password via Supabase Auth (`AuthService`)
-- **State**: `setState` only — do NOT introduce Provider / Riverpod / Bloc
-- **Routing**: `Navigator.push` / `pushReplacement` only — no named routes, no router package
-- **Global supabase**: all services import `package:crops4you/main.dart` for the global `supabase` instance — never instantiate a second client
-- **Navigation**: `BottomNavigationBar` with 6 tabs (`HomeScreen`), tab state preserved via `IndexedStack`
-- **Data access is hybrid — do not assume one path:**
-  - **Via backend HTTP API** (`parcela_service.dart`, `cultivo_service.dart`, `actividad_service.dart`): calls Express with `Authorization: Bearer <supabase.auth.currentSession.accessToken>`; base URL from `lib/config/api_config.dart`
-  - **Direct Supabase** (`auth_service.dart`, `insumo_service.dart`, `recordatorio_service.dart`): uses the global client
-- **Base URL quirk**: `ApiConfig.backendBaseUrl` is `http://10.0.2.2:3000` (Android emulator) or `http://localhost:3000` (web) — physical devices need the LAN IP. Flutter does not proxy via the backend by default.
-- **External APIs**: OpenWeatherMap (`weather_service.dart`), Google Gemini 2.5 Flash (`ai_service.dart`, hardcoded model URL)
-- **Map**: `flutter_map` + `latlong2` + `geolocator` for parcel polygon delimitation
-
-## Backend architecture
-
-Express 5 (`express.json()` replaces body-parser). Layered: routes → controllers → services. Entrypoint `index.js` is self-booting — does NOT export `app` (backend `app.js` is a stale duplicate, unused).
-
-- Routes: `GET /health` and `GET /status` (no auth) map to `health.routes.js`; `GET /clima?lat&lon` (no auth) proxies OpenWeather (`climaService.js`); full CRUD on `/parcelas`, `/cultivos`, `/actividades`
-- **Every CRUD route requires `middlewares/auth.js`**: reads `Bearer` token, calls `supabase.auth.getUser`, then sets `req.user` and `req.supabase` (a per-request authenticated Supabase client created via `createAuthenticatedClient` in `config/db.js`). New CRUD routes must mount `auth`.
-- Services take `(userId, sb)` where `sb` is the per-request client — never the shared `supabase` export for user-scoped queries
-- All errors respond `{ error: true, mensaje: '...' }` (see `middlewares/errorHandler.js`); Flutter services parse `mensaje`
-- Supabase client created once in `config/db.js` (requires `SUPABASE_URL` + `SUPABASE_ANON_KEY`, exits on startup if missing)
+| Command | Action |
+|---|---|
+| `flutter analyze` | Lint + static analysis (run before `flutter test`) |
+| `flutter test` | Tests |
+| `flutter run` | Launch app |
 
 ## Conventions
 
-- **Spanish** — all UI strings, variable names, and commit messages
-- **Supabase RLS tables**: `parcelas`, `cultivos`, `actividades`, `insumos`, `recordatorios` — every insert includes `user_id: supabase.auth.currentUser.id` (Flutter direct path) or `user_id: req.user.id` (backend path)
+- **Spanish** — all UI strings, variable names, and commit messages.
+- **Supabase RLS tables**: `parcelas`, `cultivos`, `actividades`, `insumos`, `recordatorios` — every insert includes `user_id: supabase.auth.currentUser.id` (Flutter direct path) or `user_id: req.user.id` (backend path).
 
 ## Dead code (safe to delete)
 
-- `crops4you/lib/widgets/custom_button.dart` — empty, imported nowhere
-- `crops4you/lib/widgets/custom_input.dart` — empty, imported nowhere
+- `crops4you/lib/widgets/custom_button.dart` and `custom_input.dart` — empty, imported nowhere
 - `crops4you/lib/services/api_service.dart` — 5-line stub, imported nowhere
 - `crops4you/pubspec.yaml` — `google_maps_flutter` is listed but never imported in any `.dart` file
 - `backend/app.js` — unused duplicate of `index.js` setup
 
 ## Gotchas
 
-- `crops4you/test/widget_test.dart` is **broken** — references deleted `MyApp` (renamed to `Crops4YouApp`). Rewrite before running tests.
-- Backend has no test suite; verify changes via `npm run dev` + Postman collection at `backend/postman/`
-- No CI, no codegen, no migration tooling configured.
+- `test/widget_test.dart` is **broken** — still references the deleted `MyApp` and imports `main.dart`, which now needs Supabase/`.env`. Rewrite before running tests.
+- Backend services/controllers split between `*.service.js` and `parcelaService.js`/`actividadService.js` naming — check both conventions.
+- Generated plugin files under `crops4you/{linux,macos,windows}/flutter/` change on `flutter pub get` and are safe to leave unstaged.
+- No CI, no codegen, no migration tooling configured. Backend startup pings the `parcelas` table and logs an error if Supabase creds are invalid.

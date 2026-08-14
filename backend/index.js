@@ -19,6 +19,14 @@ app.use('/actividades', require('./routes/actividades.routes'));
 // Rutas de cultivos
 app.use('/cultivos', require('./routes/cultivos.routes'));
 
+// Rutas de insumos
+app.use('/insumos', require('./routes/insumos.routes'));
+
+// Rutas de recordatorios
+app.use('/recordatorios', require('./routes/recordatorios.routes'));
+//Rutas de IA
+app.use('/ia', require('./routes/ia.routes'));
+
 app.use(require('./middlewares/errorHandler'));
 
 (async () => {
