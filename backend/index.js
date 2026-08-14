@@ -12,6 +12,7 @@ app.use(express.json());
 // Rutas
 app.use('/health', require('./routes/health.routes'));
 app.use('/status', require('./routes/health.routes'));
+app.use('/clima', require('./routes/clima.routes'));
 app.use('/parcelas', require('./routes/parcelas.routes'));
 app.use('/actividades', require('./routes/actividades.routes'));
 
