@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:crops4you/main.dart';
 import 'package:crops4you/models/cultivo.dart';
 import 'package:crops4you/models/recordatorio.dart';
 import 'package:crops4you/services/auth_service.dart';
+import 'package:crops4you/services/cultivo_service.dart';
+import 'package:crops4you/services/parcela_service.dart';
+import 'package:crops4you/services/recordatorio_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -36,34 +38,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _cargarDatos() async {
     setState(() => _loading = true);
     try {
-      final parcelas = await supabase.from('parcelas').select();
-      final cultivos = await supabase.from('cultivos').select();
+      final parcelas = await ParcelaService().getAll();
+      final cultivos = await CultivoService().getAll();
 
-      final recordatorios = await supabase
-          .from('recordatorios')
-          .select('*, cultivos(nombre, parcelas(nombre))')
-          .eq('completado', false)
-          .order('fecha_recordatorio')
-          .limit(3);
-
-      final recientes = await supabase
-          .from('cultivos')
-          .select('*, parcelas(nombre)')
-          .order('created_at', ascending: false)
-          .limit(3);
+      final recordatorios = await RecordatorioService().getPendientes();
+      final recientes = cultivos.take(3).toList();
 
       setState(() {
-        _totalParcelas = (parcelas as List).length;
-        _totalCultivos = (cultivos as List).length;
-        _cultivosActivos = (cultivos)
-            .where((c) => c['estado'] == 'activo')
-            .length;
-        _cultivosRecientes = (recientes as List)
-            .map((e) => Cultivo.fromJson(e))
-            .toList();
-        _recordatoriosPendientes = (recordatorios as List)
-            .map((e) => Recordatorio.fromJson(e))
-            .toList();
+        _totalParcelas = parcelas.length;
+        _totalCultivos = cultivos.length;
+        _cultivosActivos = cultivos.where((c) => c.estado == 'activo').length;
+        _cultivosRecientes = recientes;
+        _recordatoriosPendientes = recordatorios.take(3).toList();
         _loading = false;
       });
     } catch (e) {

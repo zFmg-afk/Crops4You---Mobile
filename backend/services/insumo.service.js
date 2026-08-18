@@ -1,12 +1,14 @@
 const { supabase: defaultSupabase } = require('../config/db');
 
-const getAll = async (userId, sb = defaultSupabase) => {
-  const { data, error } = await sb
+const getAll = async (userId, cultivoId, sb = defaultSupabase) => {
+  let query = sb
     .from('insumos')
     .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .eq('user_id', userId);
+  if (cultivoId) query = query.eq('cultivo_id', cultivoId);
+  query = query.order('fecha', { ascending: false });
 
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 };

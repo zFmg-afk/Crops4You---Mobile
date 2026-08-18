@@ -43,7 +43,11 @@ exports.create = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
-    const insumos = await insumoService.getAll(req.user.id, req.supabase);
+    const insumos = await insumoService.getAll(
+      req.user.id,
+      req.query.cultivo_id,
+      req.supabase,
+    );
     res.status(200).json(insumos);
   } catch (err) {
     next(err);

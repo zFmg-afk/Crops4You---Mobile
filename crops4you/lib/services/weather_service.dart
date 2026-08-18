@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:crops4you/config/api_config.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 class WeatherService {
-  final String _baseUrl = 'https://api.openweathermap.org/data/2.5';
-  final String _apiKey = dotenv.env['OPENWEATHER_KEY'] ?? '';
+  final String _baseUrl = '${ApiConfig.backendBaseUrl}/clima';
 
   // Obtener ubicación actual del dispositivo
   Future<Position> obtenerUbicacion() async {
@@ -33,29 +32,33 @@ class WeatherService {
     );
   }
 
+  String _mensajeError(http.Response response) {
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['mensaje'] != null) return body['mensaje'];
+    } catch (_) {}
+    return 'Error al obtener el clima: ${response.statusCode}';
+  }
+
   // Obtener clima actual
   Future<Map<String, dynamic>> getClimaActual(double lat, double lng) async {
-    final url = Uri.parse(
-      '$_baseUrl/weather?lat=$lat&lon=$lng&appid=$_apiKey&units=metric&lang=es',
-    );
+    final url = Uri.parse('$_baseUrl?lat=$lat&lon=$lng');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-    throw Exception('Error al obtener el clima: ${response.statusCode}');
+    throw Exception(_mensajeError(response));
   }
 
   // Obtener pronóstico 5 días
   Future<Map<String, dynamic>> getPronostico(double lat, double lng) async {
-    final url = Uri.parse(
-      '$_baseUrl/forecast?lat=$lat&lon=$lng&appid=$_apiKey&units=metric&lang=es&cnt=40',
-    );
+    final url = Uri.parse('$_baseUrl/pronostico?lat=$lat&lon=$lng');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-    throw Exception('Error al obtener el pronóstico: ${response.statusCode}');
+    throw Exception(_mensajeError(response));
   }
 }

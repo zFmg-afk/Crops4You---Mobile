@@ -157,7 +157,7 @@ class _ClimaScreenState extends State<ClimaScreen> {
                       child: Column(
                         children: [
                           Text(
-                            _clima!['name'] ?? 'Tu ubicación',
+                            _clima!['ciudad'] ?? 'Tu ubicación',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -165,13 +165,13 @@ class _ClimaScreenState extends State<ClimaScreen> {
                           ),
                           const SizedBox(height: 8),
                           Icon(
-                            _iconoClima(_clima!['weather'][0]['description']),
+                            _iconoClima(_clima!['condicion']),
                             size: 64,
                             color: const Color(0xFFFFB81C),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${_clima!['main']['temp'].round()}°C',
+                            '${_clima!['temperatura'].round()}°C',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 56,
@@ -179,9 +179,7 @@ class _ClimaScreenState extends State<ClimaScreen> {
                             ),
                           ),
                           Text(
-                            _clima!['weather'][0]['description']
-                                .toString()
-                                .toUpperCase(),
+                            _clima!['condicion'].toString().toUpperCase(),
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -194,22 +192,22 @@ class _ClimaScreenState extends State<ClimaScreen> {
                               _datoClima(
                                 Icons.thermostat,
                                 'Sensación',
-                                '${_clima!['main']['feels_like'].round()}°C',
+                                '${_clima!['sensacion_termica'].round()}°C',
                               ),
                               _datoClima(
                                 Icons.water_drop,
                                 'Humedad',
-                                '${_clima!['main']['humidity']}%',
+                                '${_clima!['humedad']}%',
                               ),
                               _datoClima(
                                 Icons.air,
                                 'Viento',
-                                '${(_clima!['wind']['speed'] * 3.6).round()} km/h',
+                                '${(_clima!['viento'] * 3.6).round()} km/h',
                               ),
                               _datoClima(
                                 Icons.compress,
                                 'Presión',
-                                '${_clima!['main']['pressure']} hPa',
+                                '${_clima!['presion']} hPa',
                               ),
                             ],
                           ),
@@ -334,11 +332,9 @@ class _ClimaScreenState extends State<ClimaScreen> {
   Widget _recomendacionAgricola() {
     if (_clima == null) return const SizedBox();
 
-    final temp = _clima!['main']['temp'] as num;
-    final humedad = _clima!['main']['humidity'] as num;
-    final descripcion = _clima!['weather'][0]['description']
-        .toString()
-        .toLowerCase();
+    final temp = _clima!['temperatura'] as num;
+    final humedad = _clima!['humedad'] as num;
+    final descripcion = _clima!['condicion'].toString().toLowerCase();
 
     String mensaje;
     IconData icono;
