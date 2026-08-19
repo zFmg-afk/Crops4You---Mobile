@@ -15,8 +15,8 @@ class AiService {
     final base64Image = base64Encode(bytes);
     final extension = imagen.path.split('.').last.toLowerCase();
     final mimeType = extension == 'png' ? 'image/png' : 'image/jpeg';
-
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    final modoStr = modo == ModoAnalisis.cultivo ? 'cultivo' : 'planta';
 
     final response = await http
         .post(
@@ -25,9 +25,13 @@ class AiService {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
-          body: jsonEncode({'base64Image': base64Image, 'mimeType': mimeType}),
+          body: jsonEncode({
+            'base64Image': base64Image,
+            'mimeType': mimeType,
+            'modo': modoStr,
+          }),
         )
-        .timeout(const Duration(seconds: 10));
+        .timeout(const Duration(seconds: 120));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

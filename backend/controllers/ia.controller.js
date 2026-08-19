@@ -2,7 +2,7 @@ const iaService = require('../services/ia.service');
 
 exports.analizar = async (req, res, next) => {
   try {
-    const { base64Image, mimeType } = req.body;
+    const { base64Image, mimeType, modo } = req.body;
 
     if (!base64Image) {
       return res.status(400).json({
@@ -12,9 +12,9 @@ exports.analizar = async (req, res, next) => {
     }
 
     const resultado = await Promise.race([
-      iaService.analizar(base64Image, mimeType || 'image/jpeg'),
+      iaService.analizar(base64Image, mimeType || 'image/jpeg', modo || 'cultivo'),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 9000)
+        setTimeout(() => reject(new Error('timeout')), 115000)
       )
     ]);
 

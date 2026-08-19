@@ -5,6 +5,7 @@ import 'package:crops4you/services/auth_service.dart';
 import 'package:crops4you/services/cultivo_service.dart';
 import 'package:crops4you/services/parcela_service.dart';
 import 'package:crops4you/services/recordatorio_service.dart';
+import 'package:crops4you/services/weather_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,11 +16,14 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _authService = AuthService();
+  final _weatherService = WeatherService();
+
   int _totalParcelas = 0;
   int _totalCultivos = 0;
   int _cultivosActivos = 0;
   List<Cultivo> _cultivosRecientes = [];
   List<Recordatorio> _recordatoriosPendientes = [];
+  Map<String, dynamic>? _clima;
   bool _loading = true;
 
   String get _nombreUsuario => _authService.getUserName();
@@ -40,9 +44,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final parcelas = await ParcelaService().getAll();
       final cultivos = await CultivoService().getAll();
-
       final recordatorios = await RecordatorioService().getPendientes();
       final recientes = cultivos.take(3).toList();
+
+      // Cargar clima en paralelo sin bloquear si falla
+      Map<String, dynamic>? climaData;
+      try {
+        final posicion = await _weatherService.obtenerUbicacion();
+        climaData = await _weatherService.getClimaActual(
+          posicion.latitude,
+          posicion.longitude,
+        );
+      } catch (_) {
+        climaData = null;
+      }
 
       setState(() {
         _totalParcelas = parcelas.length;
@@ -50,6 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _cultivosActivos = cultivos.where((c) => c.estado == 'activo').length;
         _cultivosRecientes = recientes;
         _recordatoriosPendientes = recordatorios.take(3).toList();
+        _clima = climaData;
         _loading = false;
       });
     } catch (e) {
@@ -60,6 +76,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ).showSnackBar(SnackBar(content: Text('Error al cargar datos: $e')));
       }
     }
+  }
+
+  IconData _iconoClima(String descripcion) {
+    final d = descripcion.toLowerCase();
+    if (d.contains('lluvia') || d.contains('rain')) return Icons.umbrella;
+    if (d.contains('nube') || d.contains('cloud')) return Icons.cloud_outlined;
+    if (d.contains('tormenta') || d.contains('storm'))
+      return Icons.thunderstorm;
+    if (d.contains('nieve') || d.contains('snow')) return Icons.ac_unit;
+    if (d.contains('niebla') || d.contains('mist')) return Icons.foggy;
+    return Icons.wb_sunny;
   }
 
   @override
@@ -136,66 +163,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
+                    // Widget de clima dinámico
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.cloud_outlined,
-                                color: Colors.white,
-                                size: 32,
-                              ),
-                              SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '24°C',
-                                    style: TextStyle(
+                      child: _clima == null
+                          ? const Row(
+                              children: [
+                                Icon(
+                                  Icons.cloud_outlined,
+                                  color: Colors.white54,
+                                  size: 28,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Cargando clima...',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _iconoClima(_clima!['condicion'] ?? ''),
                                       color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
+                                      size: 32,
                                     ),
-                                  ),
-                                  Text(
-                                    'Parcialmente nublado',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${(_clima!['temperatura'] as num).round()}°C',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          _clima!['condicion'] ?? '',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Humedad 65%',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                  ],
                                 ),
-                              ),
-                              Text(
-                                'Viento 12 km/h',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'Humedad ${_clima!['humedad']}%',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Viento ${((_clima!['viento'] as num) * 3.6).round()} km/h',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                              ],
+                            ),
                     ),
                   ],
                 ),
